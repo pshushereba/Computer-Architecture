@@ -2,6 +2,10 @@
 
 import sys
 
+HLT = 0b00000001
+LDI = 0b10000010
+PRN = 0b01000111
+
 class CPU:
     """Main CPU class."""
 
@@ -9,6 +13,7 @@ class CPU:
         """Construct a new CPU."""
         self.ram = [0] * 256
         self.reg = [0] * 8
+        self.reg[6] = 0xF4
         self.pc = 0
         self.fl = 0
 
@@ -16,22 +21,28 @@ class CPU:
         """Load a program into memory."""
 
         address = 0
+        with open(sys.argv[1], 'r') as f:
+            program = f.readlines()
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010, # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111, # PRN R0
+        #     0b00000000,
+        #     0b00000001, # HLT
+        # ]
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+            for instruction in program:
+                inst = instruction.split('#')[0].strip()
+                if inst == '':
+                    continue
+                inst_num = int(inst, 2)
+                self.ram[address] = inst_num
+                address += 1
 
 
     def alu(self, op, reg_a, reg_b):
@@ -65,10 +76,27 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        while True:
+            op_code = self.ram_read(self.pc)
+            
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+        
+            if op_code == HLT:
+                break
+            elif op_code == LDI:
+                self.reg[operand_a] = operand_b
+                self.pc += 3
+            elif op_code == PRN:
+                print(self.reg[operand_a])
+                self.pc += 2
+            
+
 
     def ram_read(self, MAR):
-        pass
+        return self.ram[MAR]
 
-    def ram_write(self, MDR):
-        pass
+    
+
+    def ram_write(self, MAR, MDR):
+        self.ram[MAR] = MDR
