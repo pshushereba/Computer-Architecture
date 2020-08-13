@@ -5,6 +5,7 @@ import sys
 HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
+MUL = 0b10100010
 
 class CPU:
     """Main CPU class."""
@@ -16,6 +17,7 @@ class CPU:
         self.reg[6] = 0xF4
         self.pc = 0
         self.fl = 0
+        self.branchtable = {}
 
     def load(self):
         """Load a program into memory."""
@@ -23,18 +25,6 @@ class CPU:
         address = 0
         with open(sys.argv[1], 'r') as f:
             program = f.readlines()
-
-        # For now, we've just hardcoded a program:
-
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010, # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111, # PRN R0
-        #     0b00000000,
-        #     0b00000001, # HLT
-        # ]
 
             for instruction in program:
                 inst = instruction.split('#')[0].strip()
@@ -50,7 +40,8 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -90,7 +81,9 @@ class CPU:
             elif op_code == PRN:
                 print(self.reg[operand_a])
                 self.pc += 2
-            
+            elif op_code == MUL:
+                self.alu("MUL", operand_a, operand_b)
+                self.pc += 3
 
 
     def ram_read(self, MAR):
